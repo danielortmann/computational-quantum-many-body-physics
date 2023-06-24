@@ -3,7 +3,7 @@
 import numpy as np
 from a_mps import split_truncate_theta
 import scipy.sparse
-import scipy.sparse.linalg.eigen.arpack as arp
+from scipy.sparse.linalg.eigen import arpack as arp
 
 
 class HEffective(scipy.sparse.linalg.LinearOperator):
