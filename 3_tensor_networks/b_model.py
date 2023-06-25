@@ -39,6 +39,7 @@ class TFIModel:
         self.sigmaz = np.array([[1., 0.], [0., -1.]])
         self.id = np.eye(2)
         self.init_H_bonds()
+        self.init_H_mpo()
 
     def init_H_bonds(self):
         """Initialize `H_bonds` hamiltonian. Called by __init__()."""
@@ -55,6 +56,13 @@ class TFIModel:
             # H_bond has legs ``i, j, i*, j*``
             H_list.append(np.reshape(H_bond, [d, d, d, d]))
         self.H_bonds = H_list
+    
+    def init_H_mpo(self):
+        O = np.zeros([2, 2])
+        W = np.array([[self.id, self.sigmax, -self.g*self.sigmaz],
+                      [O, O, -self.J*self.sigmax],
+                      [O, O, self.id]])
+        self.H_mpo = [W for _ in range(self.L)]
 
     def energy(self, psi):
         """Evaluate energy E = <psi|H|psi> for the given MPS."""
