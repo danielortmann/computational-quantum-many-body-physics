@@ -94,6 +94,48 @@ def init_spinup_MPS(L):
     return MPS(Bs, Ss)
 
 
+class iMPS(MPS):
+    """Class for an infinite matrix product state."""
+
+    def __init__(self, Bs, Ss):
+        super().__init__(Bs, Ss)
+
+    def get_theta2(self, i):
+        j = (i + 1) % self.L
+        return np.tensordot(self.get_theta1(i), self.Bs[j], [2, 0])
+
+    def get_chi(self):
+        return [self.Bs[i].shape[2] for i in range(self.L )]
+
+    def bond_expectation_value(self, op):
+        result = []
+        for i in range(self.L):
+            theta = self.get_theta2(i)
+            op_theta = np.tensordot(op[i], theta, axes=[[2, 3], [1, 2]])
+            result.append(np.tensordot(theta.conj(), op_theta, [[0, 1, 2, 3], [2, 0, 1, 3]]))
+        return np.real_if_close(result)
+
+    def entanglement_entropy(self):
+        result = []
+        for i in range(0, self.L):
+            S = self.Ss[i].copy()
+            S[S < 1.e-20] = 0.  # 0*log(0) should give 0; avoid warning or NaN.
+            S2 = S * S
+            assert abs(np.linalg.norm(S) - 1.) < 1.e-14
+            result.append(-np.sum(S2 * np.log(S2)))
+        return np.array(result)
+
+
+def init_spinup_iMPS(L):
+    """Return a product state with all spins up as an iMPS with unit cell length L"""
+    B = np.zeros([1, 2, 1], np.float)
+    B[0, 0, 0] = 1.
+    S = np.ones([1], np.float)
+    Bs = [B.copy() for i in range(L)]
+    Ss = [S.copy() for i in range(L)]
+    return iMPS(Bs, Ss)
+
+
 def split_truncate_theta(theta, chi_max, eps):
     """Split and truncate a two-site wave function in mixed canonical form.
 

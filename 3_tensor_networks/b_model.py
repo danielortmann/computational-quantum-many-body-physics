@@ -68,3 +68,25 @@ class TFIModel:
         """Evaluate energy E = <psi|H|psi> for the given MPS."""
         assert psi.L == self.L
         return np.sum(psi.bond_expectation_value(self.H_bonds))
+
+
+class iTFIModel(TFIModel):
+    """Class generating the Hamiltonian of the infinite transverse-field Ising model."""
+
+    def __init__(self, L, J, g):
+        super().__init__(L, J, g)
+
+    def init_H_bonds(self):
+        sx, sz, id = self.sigmax, self.sigmaz, self.id
+        d = self.d
+        H_list = []
+        for i in range(self.L):
+            gL = gR = 0.5 * self.g
+            H_bond = -self.J * np.kron(sx, sx) - gL * np.kron(sz, id) - gR * np.kron(id, sz)
+            H_list.append(np.reshape(H_bond, [d, d, d, d]))
+        self.H_bonds = H_list
+
+    def energy(self, psi):
+        """Evaluate energy density, i.e. energy per site <psi|H|psi> / L, for the given MPS."""
+        assert psi.L == self.L
+        return np.sum(psi.bond_expectation_value(self.H_bonds)) / self.L

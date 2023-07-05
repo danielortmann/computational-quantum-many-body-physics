@@ -35,9 +35,22 @@ def run_TEBD(psi, U_bonds, N_steps, chi_max, eps):
     # done
 
 
-def update_bond(psi, i, U_bond, chi_max, eps):
+def run_iTEBD(psi, U_bonds, N_steps, chi_max, eps):
+    """Evolve the state `psi` for `N_steps` time steps with (first order) TEBD.
+
+    The state psi is modified in place."""
+    Nbonds = psi.L
+    assert len(U_bonds) == Nbonds
+    for n in range(N_steps):
+        for k in [0, 1]:  # even, odd
+            for i_bond in range(k, Nbonds, 2):
+                update_bond(psi, i_bond, U_bonds[i_bond], chi_max, eps, iTEBD=True)
+    # done
+
+
+def update_bond(psi, i, U_bond, chi_max, eps, iTEBD=False):
     """Apply `U_bond` acting on i,j=(i+1) to `psi`."""
-    j = i + 1
+    j = (i + 1) % psi.L if iTEBD else i + 1
     # construct theta matrix
     theta = psi.get_theta2(i)  # vL i j vR
     # apply U
@@ -50,7 +63,6 @@ def update_bond(psi, i, U_bond, chi_max, eps):
     psi.Bs[i] = np.tensordot(Gi, np.diag(Sj), axes=[2, 0])  # vL i [vC], [vC] vC
     psi.Ss[j] = Sj  # vC
     psi.Bs[j] = Bj  # vC j vR
-
 
 
 def example_TEBD_gs_finite(L, J, g):
