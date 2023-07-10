@@ -91,10 +91,16 @@ class Network:
         is the learning rate."""
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
+        n=0
         for x, y in mini_batch:
+            n+=1
+            #print('batch:', n, len(mini_batch))
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+            # for i in range(len(nabla_b)):
+            #     print(i, nabla_b[i])
+            # l
         self.weights = [w-(eta/len(mini_batch))*nw
                         for w, nw in zip(self.weights, nabla_w)]
         self.biases = [b-(eta/len(mini_batch))*nb
@@ -108,10 +114,23 @@ class Network:
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
-        #################
-        raise NotImplementedError("TODO: implementing this is an exercise")
-        #################
-
+        zs, activations = [x], [x]
+        a = activations[0]
+        for b, w in zip(self.biases, self.weights):
+            z = np.dot(w, a) + b
+            zs.append(z)
+            a = sigmoid(z)
+            activations.append(a)
+        
+        L = self.num_layers - 1
+        delta = self.cost_derivative(activations[L], y) * sigmoid_prime(zs[L])
+        nabla_b[L-1] = delta
+        nabla_w[L-1] = np.outer(delta, activations[L-1])
+        for l in range(L - 1, 0, -1):
+            delta = (self.weights[l].T @ delta) * sigmoid_prime(zs[l])
+            nabla_b[l-1] = delta
+            nabla_w[l-1] = np.outer(delta, activations[l-1])
+            
         return (nabla_b, nabla_w)
 
     def evaluate(self, test_data):
